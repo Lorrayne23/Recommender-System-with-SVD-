@@ -11,26 +11,26 @@ with tarfile.open("lthing_data.tar.gz") as tar:
     with tar.extractfile("lthing_data/reviews.txt") as file:
         for line in file:
             line_str = line.decode("utf-8").strip()  # Convert bytes to string and remove leading/trailing whitespace
+
             if not line_str.startswith("reviews"):
                 continue  # Skip lines that don't start with review
 
-            # Extract the dictionary part of the line and evaluate it
-            # Exemple : {'comment': 'http://www.lonelymountain.net/books/mar08.html#kindlgc ', 'nhelpful': 0, 'unixtime': 1210636800, 'work': '73940', 'flags': [], 'user': 'gwyneira', 'stars': 4.0, 'time': 'May 13, 2008'}
-            record = eval(line_str.split("=", 1)[1])
+            try:
+                # Extract the dictionary part of the line and evaluate it
+                # Example: {'comment': 'http://www.lonelymountain.net/books/mar08.html#kindlgc ', 'nhelpful': 0, 'unixtime': 1210636800, 'work': '73940', 'flags': [], 'user': 'gwyneira', 'stars': 4.0, 'time': 'May 13, 2008'}
+                record = eval(line_str.split("=", 1)[1])
+            except Exception as e:
+                # Handle the error with a message
+                print(f"Error occurred while processing line: {line_str}")
+                continue
+                # After execution was noted that the error ocurrered processing online 4 lines
 
             if any(x not in record for x in ['user', 'work', 'stars']):
                 continue
-            reviews.append([record['user'], record['work'], record['stars']])
 
+            reviews.append([record['user'], record['work'], record['stars']])
             # Exemple ['Wedernoch', '9667839', 5.0]
             #print(len(reviews), "records retrieved")
-
-            """Stops in the record 397979, because the next  line of the file stars with  12 - 112')] 
-                and don't work in : record = eval(line_str.split("=", 1)[1])."""
-
-
-            if len(reviews) == 397979:
-                break
 
 
 reviews = pd.DataFrame(reviews, columns=["user", "work", "stars"])
