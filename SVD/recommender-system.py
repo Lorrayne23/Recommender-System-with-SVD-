@@ -9,20 +9,25 @@ import numpy as np
 with tarfile.open("lthing_data.tar.gz") as tar:
     with tar.extractfile("lthing_data/reviews.txt") as file:
         for line in file:
-            line_str = line.decode("utf-8").strip()  # Converte bytes em string e remove espaços em branco à esquerda/à direita
+            line_str = line.decode("utf-8").strip()  # Convert bytes to string and remove leading/trailing whitespace
             if not line_str.startswith("reviews"):
-                continue  # Pela linhas que não começão com review
+                continue  # Skip lines that don't start with review
 
-            # Extrai a parte do dicionário da linha e avalie-a
-            # Exemplo : {'comment': 'http://www.lonelymountain.net/books/mar08.html#kindlgc ', 'nhelpful': 0, 'unixtime': 1210636800, 'work': '73940', 'flags': [], 'user': 'gwyneira', 'stars': 4.0, 'time': 'May 13, 2008'}
+            # Extract the dictionary part of the line and evaluate it
+            # Exemple : {'comment': 'http://www.lonelymountain.net/books/mar08.html#kindlgc ', 'nhelpful': 0, 'unixtime': 1210636800, 'work': '73940', 'flags': [], 'user': 'gwyneira', 'stars': 4.0, 'time': 'May 13, 2008'}
             record = eval(line_str.split("=", 1)[1])
 
             if any(x not in record for x in ['user', 'work', 'stars']):
                 continue
             reviews.append([record['user'], record['work'], record['stars']])
 
-            # Exemplo ['Wedernoch', '9667839', 5.0]
+            # Exemple ['Wedernoch', '9667839', 5.0]
             #print(len(reviews), "records retrieved")
+
+            """Stops in the record 397979, because the next  line of the file stars with  12 - 112')] 
+                and don't work in : record = eval(line_str.split("=", 1)[1])."""
+
+
             if len(reviews) == 397979:
                 break
 
@@ -30,7 +35,7 @@ with tarfile.open("lthing_data.tar.gz") as tar:
 reviews = pd.DataFrame(reviews, columns=["user", "work", "stars"])
 print(reviews.head())
 
-# Usuários que fizeram review de mais de 50 livros
+# Look for the users who reviewed more than 50 books
 usercount = reviews[["work","user"]].groupby("user").count()
 usercount = usercount[usercount["work"] >= 50]
 print(usercount.head())
@@ -44,11 +49,12 @@ print(workcount.head())
 reviews = reviews[reviews["user"].isin(usercount.index) & reviews["work"].isin(workcount.index)]
 print(reviews)
 
+# Use “pivot table” function in pandas to convert this into a matrix
 reviewmatrix = reviews.pivot(index="user", columns="work", values="stars").fillna(0)
-
 print(reviewmatrix)
-
 matrix = reviewmatrix.values
+
+#Singular value decomposition
 u, s, vh = svd(matrix, full_matrices=False)
 
 
@@ -58,14 +64,14 @@ u, s, vh = svd(matrix, full_matrices=False)
 
 # Find the highest similarity
 def cosine_similarity(v, u):
-    return (v @ u) / (np.linalg.norm(v) * np.linalg.norm(u))
+    return (v @ u) / (np.linalg.norm(v) * np.linalg.norm(u)) # Calculates the cosine similarity between the two vectors using the formula
 
 
-highest_similarity = -np.inf
+highest_similarity = -np.inf # Deginer highest similarity based in negative infinity (-np.inf).
 highest_sim_col = -1
 for col in range(1, vh.shape[1]):
     similarity = cosine_similarity(vh[:, 0], vh[:, col])
-    if similarity > highest_similarity:
+    if similarity > highest_similarity:    # If the similarity is greater than the current highest_similarity, it updates highest_similarity to the new similarity value and stores the column index (col) in the variable highest_sim_col.
         highest_similarity = similarity
         highest_sim_col = col
 
