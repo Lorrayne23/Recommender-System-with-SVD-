@@ -1,11 +1,12 @@
 import tarfile
 import json
 import ast
-reviews = []
+
 import pandas as pd
 from numpy.linalg import svd
 import numpy as np
 
+reviews = []
 with tarfile.open("lthing_data.tar.gz") as tar:
     with tar.extractfile("lthing_data/reviews.txt") as file:
         for line in file:
